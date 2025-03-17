@@ -1,4 +1,4 @@
-package com.tobiasferenc.finalapp;
+package com.tobiasferenc.finalapp.ui;
 
 import android.content.Context;
 import android.content.SharedPreferences;

@@ -1,20 +1,13 @@
-package com.tobiasferenc.finalapp;
+package com.tobiasferenc.finalapp.ui;
 
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 
-import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyProperties;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-
-import androidx.security.crypto.EncryptedSharedPreferences;
-import androidx.security.crypto.MasterKeys;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,8 +15,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import com.tobiasferenc.finalapp.R;
+import com.tobiasferenc.finalapp.data.dao.UserDao;
+import com.tobiasferenc.finalapp.data.database.AppDatabase;
+import com.tobiasferenc.finalapp.data.entities.User;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -31,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     EditText usernameS, passwordS;
     ImageView PFPS;
 
+    AppDatabase db;
+    UserDao userDao;
     private static final int PICK_IMAGE_REQUEST = 1;
 
     // Přidej instanci pro práci s EncryptedSharedPreferences
@@ -51,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        db = AppDatabase.getInstance(this);
+        userDao = db.userDao();
     }
 
     public void Register(View view) {
@@ -61,33 +60,38 @@ public class MainActivity extends AppCompatActivity {
         String password = passwordS.getText().toString();
 
         if (username.isEmpty() || password.isEmpty()) {
-            CharSequence text = "obě hodnoty musí být vyplněny";
-            int duration = Toast.LENGTH_SHORT;
-            Toast toast = Toast.makeText(this, text, duration);
-            toast.show();
-        } else {
-            // Uložení šifrovaných dat pomocí MyPreferencesManager
-            preferencesManager.saveUserData(username, password);
-
-            CharSequence text = "Uživatel registrován";
-            int duration = Toast.LENGTH_SHORT;
-            Toast toast = Toast.makeText(this, text, duration);
-            toast.show();
+            Toast.makeText(this, "Vyplň všechna pole!", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        new Thread(() -> {
+            userDao.insertUser(new User(username, password));
+
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Uživatel " + username + " uložen!", Toast.LENGTH_SHORT).show()
+            );
+        }).start();
     }
+
     public void showSavedData(View view) {
-        // Získání instance MyPreferencesManager a načtení dat
-        MyPreferencesManager preferencesManager = new MyPreferencesManager();
-        preferencesManager.initEncryptedPreferences(this); // Předáme kontext
+        String username = usernameS.getText().toString();
 
-        // Načteme uživatelské údaje
-        String username = preferencesManager.getUsername();
-        String password = preferencesManager.getPassword();
+        if (username.isEmpty()) {
+            Toast.makeText(this, "Zadej username!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // Vytvoříme Toast, který vypíše hodnoty
-        String message = "Username: " + username + "\nPassword: " + password;
+        new Thread(() -> {
+            User user = userDao.getUser(username);
 
-        // Zobrazíme Toast s těmito hodnotami
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            runOnUiThread(() -> {
+                if (user != null) {
+                    String message = "Username: " + user.username + "\nPassword: " + user.password;
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "Uživatel nenalezen!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }).start();
     }
 }
