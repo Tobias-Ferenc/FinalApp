@@ -1,12 +1,12 @@
 package com.tobiasferenc.finalapp.ui;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 
 import androidx.activity.EdgeToEdge;
@@ -18,7 +18,6 @@ import androidx.core.view.WindowInsetsCompat;
 import com.tobiasferenc.finalapp.R;
 import com.tobiasferenc.finalapp.data.dao.UserDao;
 import com.tobiasferenc.finalapp.data.database.AppDatabase;
-import com.tobiasferenc.finalapp.data.entities.User;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -51,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         db = AppDatabase.getInstance(this);
         userDao = db.userDao();
     }
-
+/*
     public void Register(View view) {
         usernameS = findViewById(R.id.username);
         passwordS = findViewById(R.id.PASSWORD);
@@ -93,5 +92,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }).start();
+    }*/
+public void switchRegister(View v) {
+    Intent intent = new Intent(MainActivity.this, Register.class);
+    startActivity(intent);
+}
+    public void switchProfile(View v) {
+        Intent intent = new Intent(MainActivity.this, Profile.class);
+        startActivity(intent);
     }
 }

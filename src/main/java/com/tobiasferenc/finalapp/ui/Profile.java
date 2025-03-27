@@ -1,6 +1,8 @@
 package com.tobiasferenc.finalapp.ui;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,9 +11,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.tobiasferenc.finalapp.R;
+import com.tobiasferenc.finalapp.data.entities.User;
 
 public class Profile extends AppCompatActivity {
-
 
 
     @Override
@@ -25,4 +27,5 @@ public class Profile extends AppCompatActivity {
             return insets;
         });
     }
+
 }

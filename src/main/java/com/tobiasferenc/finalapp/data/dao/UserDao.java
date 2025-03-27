@@ -18,4 +18,7 @@ public interface UserDao {
 
     @Query("SELECT * FROM users")
     List<User> getAllUsers();
+    @Query("UPDATE users SET profilePicturePath = :imagePath WHERE username = :username")
+    void updateUserProfilePicture(String username, String imagePath);
 }
+
