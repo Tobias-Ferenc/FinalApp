@@ -2,6 +2,7 @@ package com.tobiasferenc.finalapp.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,8 +14,11 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import android.Manifest;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -30,6 +34,9 @@ public class Register extends AppCompatActivity {
 
     AppDatabase db;
     UserDao userDao;
+
+    private static final int STORAGE_PERMISSION_CODE = 100;
+    private static final int REQUEST_STORAGE_PERMISSION = 100;
     private static final int PICK_IMAGE_REQUEST = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +50,9 @@ public class Register extends AppCompatActivity {
         });
         db = AppDatabase.getInstance(this);
         userDao = db.userDao();
+        requestStoragePermission();
+        loadUserProfile();
+        PFPS = findViewById(R.id.PFP);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -50,8 +60,45 @@ public class Register extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
             Uri selectedImageUri = data.getData();
             if (selectedImageUri != null) {
-                String imagePath = getRealPathFromURI(Register.this,selectedImageUri);
+                String imagePath = getRealPathFromURI(Register.this, selectedImageUri);
+
+                // Zobraz obrázek hned
+                PFPS.setImageURI(selectedImageUri);
+
+                // Ulož cestu do databáze
                 saveImagePathToDatabase(imagePath);
+            }
+        }
+    }
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Oprávnění uděleno!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Oprávnění zamítnuto!", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void requestStoragePermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_MEDIA_IMAGES}, REQUEST_STORAGE_PERMISSION);
+            } else {
+                openGallery();
+            }
+        } else {
+            // Starší Androidy
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
+            } else {
+                openGallery();
             }
         }
     }
@@ -108,6 +155,7 @@ public class Register extends AppCompatActivity {
 
         new Thread(() -> {
             userDao.updateUserProfilePicture("uzivatelskejmeno", imagePath);
+            Log.e("dyk",imagePath);
         }).start();
     }
     public void RegisterUser(View view) {
@@ -156,8 +204,20 @@ public class Register extends AppCompatActivity {
         }).start();
     }
 
+    public void openGallery(View view) { openGallery(); }
+
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+    private void loadUserProfile() {
+        new Thread(() -> {
+            User user = userDao.getUser("uzivatelskejmeno");  // Změň na aktuální username
+            if (user != null && user.profilePicturePath != null) {
+                runOnUiThread(() -> {
+                    PFPS.setImageURI(Uri.parse(user.profilePicturePath));
+                });
+            }
+        }).start();
     }
 }

@@ -1,5 +1,6 @@
 package com.tobiasferenc.finalapp.data.entities;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 
@@ -12,7 +13,7 @@ public class User {
     public String password;
     public String profilePicturePath; // Přidáme cestu k obrázku
 
-    // Konstruktor pro registraci bez obrázku
+    @Ignore
     public User(String username, String password) {
         this.username = username;
         this.password = password;
