@@ -2,4 +2,12 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="darkGray">#2C2C2C</color> <!-- Tmavě šedé pozadí -->
+    <color name="lightText">#E0E0E0</color> <!-- Světle šedý text -->
+    <color name="lightHint">#A0A0A0</color> <!-- Světle šedý hint text -->
+    <color name="primaryGray">#5F6368</color> <!-- Šedé tlačítko pro přihlášení -->
+    <color name="secondaryGray">#424242</color> <!-- Tmavší šedé tlačítko pro odhlášení -->
+
+
+
 </resources>

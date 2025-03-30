@@ -23,4 +23,7 @@ public class WishListItem {
     public String getItemName() {
         return itemName;
     }
+    public String getOwnerUsername() {  // Přidáme tento getter
+        return ownerUsername;
+    }
 }

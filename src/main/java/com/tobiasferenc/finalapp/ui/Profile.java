@@ -1,10 +1,12 @@
 package com.tobiasferenc.finalapp.ui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -62,6 +64,13 @@ public class Profile extends AppCompatActivity {
                 if (user != null && user.password.equals(password)) {
                     usernameText.setText(username);
                     loadProfilePicture(user.profilePicturePath);
+
+                    // ULOŽENÍ username DO SharedPreferences
+                    SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString("username", username); // loggedInUsername = jméno z přihlášení
+                    editor.apply();
+
                     Toast.makeText(this, "Přihlášení úspěšné!", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "Neplatné uživatelské jméno nebo heslo!", Toast.LENGTH_SHORT).show();
@@ -69,6 +78,7 @@ public class Profile extends AppCompatActivity {
             });
         }).start();
     }
+
 
     private void loadProfilePicture(String imagePath) {
         if (imagePath != null && !imagePath.isEmpty()) {
@@ -84,5 +94,22 @@ public class Profile extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Žádná profilovka nenalezena!", Toast.LENGTH_SHORT).show();
         }
+    }
+    public void signOut(View view) {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove("username"); // Odstranění uloženého username
+        editor.apply();
+
+        // Přechod na přihlašovací obrazovku
+        Intent intent = new Intent(this, Profile.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Zabrání návratu tlačítkem zpět
+        startActivity(intent);
+
+    }
+    public void maindyk(View view) {
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+
     }
 }

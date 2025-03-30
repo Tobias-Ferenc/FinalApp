@@ -1,44 +1,88 @@
-<?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:gravity="center"
     android:padding="20dp"
-    android:gravity="center">
+    android:background="@color/darkGray">
 
+    <!-- Tlačítko pro návrat na MainActivity -->
+
+    <!-- Profilová fotka -->
+
+    <Button
+        android:id="@+id/backToMainButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="16dp"
+        android:background="@color/secondaryGray"
+        android:onClick="maindyk"
+        android:text="Zpět na hlavní stránku"
+        android:textColor="@color/lightText" />
+
+    <ImageView
+        android:id="@+id/profile_picture"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_launcher_background"
+        android:background="@drawable/profile_picture_border"/>
+
+    <!-- Text s uživatelským jménem -->
+    <TextView
+        android:id="@+id/username_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/lightText"
+        android:text="Přihlášen jako: " />
+
+    <!-- Textové pole pro uživatelské jméno -->
     <EditText
         android:id="@+id/username_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Zadej uživatelské jméno" />
+        android:hint="Zadej uživatelské jméno"
+        android:padding="10dp"
+        android:textColor="@color/lightText"
+        android:textColorHint="@color/lightHint"
+        android:background="@drawable/edittext_bg"/>
 
+    <!-- Textové pole pro heslo -->
     <EditText
         android:id="@+id/password_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Zadej heslo"
-        android:inputType="textPassword"/>
+        android:inputType="textPassword"
+        android:padding="10dp"
+        android:textColor="@color/lightText"
+        android:textColorHint="@color/lightHint"
+        android:background="@drawable/edittext_bg"/>
 
+    <!-- Tlačítko pro přihlášení -->
     <Button
         android:id="@+id/login_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Přihlásit se" />
+        android:text="Přihlásit se"
+        android:backgroundTint="@color/primaryGray"
+        android:textColor="@color/white"
+        android:layout_marginTop="12dp"/>
 
-    <TextView
-        android:id="@+id/username_text"
-        android:layout_width="wrap_content"
+    <!-- Tlačítko pro odhlášení -->
+    <Button
+        android:id="@+id/logout_button"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:padding="10dp"
-        android:text="Uživatelské jméno se zobrazí zde" />
-
-    <ImageView
-        android:id="@+id/profile_picture"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_launcher_background" />
+        android:layout_marginTop="8dp"
+        android:backgroundTint="@color/secondaryGray"
+        android:onClick="signOut"
+        android:text="Odhlásit se"
+        android:textColor="@color/white" />
 
 </LinearLayout>

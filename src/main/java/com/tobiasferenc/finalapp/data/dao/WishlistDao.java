@@ -28,4 +28,11 @@ public interface WishlistDao {
 
     @Query("DELETE FROM wishlist WHERE id = :itemId")
     void deleteItem(int itemId); // Mazání položky
+    @Query("SELECT * FROM wishlist")
+    List<WishListItem> getAllWishlistItems();
+
+    @Query("UPDATE wishlist SET takenBy = :username WHERE id = :itemId AND takenBy IS NULL")
+    void takeItem(int itemId, String username);
+    @Query("UPDATE wishlist SET takenBy = NULL WHERE id = :itemId AND takenBy = :username")
+    void returnItem(int itemId, String username);
 }

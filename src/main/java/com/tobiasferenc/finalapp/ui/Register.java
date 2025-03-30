@@ -2,6 +2,7 @@ package com.tobiasferenc.finalapp.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -197,14 +198,23 @@ public class Register extends AppCompatActivity {
         new Thread(() -> {
             userDao.insertUser(new User(username, password));
 
+            // ✅ Uložení username do SharedPreferences
+            SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString("username", username);
+            editor.apply();
+
             runOnUiThread(() ->
                     Toast.makeText(this, "Uživatel " + username + " uložen!", Toast.LENGTH_SHORT).show()
             );
-        }).start();
 
-        Intent intent = new Intent(Register.this, MainActivity.class);
-        startActivity(intent);
+            // ✅ Přechod na hlavní stránku
+            Intent intent = new Intent(Register.this, MainActivity.class);
+            startActivity(intent);
+            finish(); // Ukončí registrační aktivitu
+        }).start();
     }
+
 
     public void showSavedData(View view) {
         String username = usernameS.getText().toString();

@@ -3,31 +3,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/darkGray">
 
+    <!-- Tlačítko pro návrat na hlavní stránku -->
+    <Button
+        android:id="@+id/backToMainButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Zpět na hlavní stránku"
+        android:background="@color/secondaryGray"
+        android:textColor="@color/lightText"
+        android:layout_marginTop="16dp"
+        android:onClick="maindyk"/>
+
+    <!-- Textové pole pro název položky -->
     <EditText
         android:id="@+id/itemNameInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Zadej položku" />
+        android:hint="Zadej položku"
+        android:textColorHint="@color/lightHint"
+        android:textColor="@color/lightText"
+        android:padding="10dp"
+        android:background="@drawable/edittext_bg"/>
 
+    <!-- Tlačítko pro přidání položky do wishlistu -->
     <Button
         android:id="@+id/addItemButton"
-        android:layout_width="264dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Přidat do wishlistu" />
+        android:text="Přidat do wishlistu"
+        android:backgroundTint="@color/primaryGray"
+        android:textColor="@color/white"
+        android:layout_marginTop="12dp"/>
 
+    <!-- Text s nadpisem pro wishlist -->
     <TextView
         android:id="@+id/myWishlistLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Můj wishlist:"
         android:textStyle="bold"
+        android:textColor="@color/lightText"
         android:paddingTop="16dp"/>
 
+    <!-- ListView pro zobrazení wishlistu -->
     <ListView
         android:id="@+id/wishlistListView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>
