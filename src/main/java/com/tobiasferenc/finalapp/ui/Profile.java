@@ -21,7 +21,7 @@ import com.tobiasferenc.finalapp.data.entities.User;
 import java.io.File;
 
 public class Profile extends AppCompatActivity {
-    EditText usernameInput;
+    EditText usernameInput, passwordInput;
     Button loginButton;
     TextView usernameText;
     ImageView profilePicture;
@@ -35,6 +35,7 @@ public class Profile extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
 
         usernameInput = findViewById(R.id.username_input);
+        passwordInput = findViewById(R.id.password_input); // Přidán vstup pro heslo
         loginButton = findViewById(R.id.login_button);
         usernameText = findViewById(R.id.username_text);
         profilePicture = findViewById(R.id.profile_picture);
@@ -47,21 +48,23 @@ public class Profile extends AppCompatActivity {
 
     private void loginUser() {
         String username = usernameInput.getText().toString().trim();
+        String password = passwordInput.getText().toString().trim();
 
-        if (username.isEmpty()) {
-            Toast.makeText(this, "Zadej uživatelské jméno!", Toast.LENGTH_SHORT).show();
+        if (username.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Zadej uživatelské jméno a heslo!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         new Thread(() -> {
-            User user = userDao.getUserByUsername(username);
+            User user = userDao.getUser(username);
 
             runOnUiThread(() -> {
-                if (user != null) {
-                    usernameText.setText(user.username);
+                if (user != null && user.password.equals(password)) {
+                    usernameText.setText(username);
                     loadProfilePicture(user.profilePicturePath);
+                    Toast.makeText(this, "Přihlášení úspěšné!", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "Uživatel nenalezen!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Neplatné uživatelské jméno nebo heslo!", Toast.LENGTH_SHORT).show();
                 }
             });
         }).start();
@@ -70,7 +73,7 @@ public class Profile extends AppCompatActivity {
     private void loadProfilePicture(String imagePath) {
         if (imagePath != null && !imagePath.isEmpty()) {
             File imgFile = new File(imagePath);
-            Log.d("ProfilePic", "Path: " + imagePath); // Přidej logování!
+            Log.d("ProfilePic", "Path: " + imagePath);
 
             if (imgFile.exists()) {
                 Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
@@ -82,5 +85,4 @@ public class Profile extends AppCompatActivity {
             Toast.makeText(this, "Žádná profilovka nenalezena!", Toast.LENGTH_SHORT).show();
         }
     }
-
 }

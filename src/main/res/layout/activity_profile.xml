@@ -12,6 +12,13 @@
         android:layout_height="wrap_content"
         android:hint="Zadej uživatelské jméno" />
 
+    <EditText
+        android:id="@+id/password_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Zadej heslo"
+        android:inputType="textPassword"/>
+
     <Button
         android:id="@+id/login_button"
         android:layout_width="match_parent"

@@ -22,5 +22,7 @@ public interface UserDao {
     void updateUserProfilePicture(String username, String imagePath);
     @Query("SELECT * FROM users WHERE username = :username LIMIT 1")
     User getUserByUsername(String username);
+    @Query("SELECT profilePicturePath FROM users WHERE username = :username LIMIT 1")
+    String getUserProfilePicturePath(String username);
 }
 

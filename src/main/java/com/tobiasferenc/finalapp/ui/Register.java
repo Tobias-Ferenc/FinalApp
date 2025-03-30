@@ -5,9 +5,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -53,6 +56,7 @@ public class Register extends AppCompatActivity {
         requestStoragePermission();
         loadUserProfile();
         PFPS = findViewById(R.id.PFP);
+
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -60,48 +64,57 @@ public class Register extends AppCompatActivity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
             Uri selectedImageUri = data.getData();
             if (selectedImageUri != null) {
-                String imagePath = getRealPathFromURI(Register.this, selectedImageUri);
-
                 // Zobraz obrázek hned
                 PFPS.setImageURI(selectedImageUri);
+
+                // Získej skutečnou cestu k obrázku
+                String imagePath = getRealPathFromURI(Register.this, selectedImageUri);
 
                 // Ulož cestu do databáze
                 saveImagePathToDatabase(imagePath);
             }
         }
     }
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Oprávnění uděleno!", Toast.LENGTH_SHORT).show();
+
+
+    private void requestStoragePermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ requires new permission to read images
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Request the permission if it's not granted
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_MEDIA_IMAGES}, STORAGE_PERMISSION_CODE);
             } else {
-                Toast.makeText(this, "Oprávnění zamítnuto!", Toast.LENGTH_SHORT).show();
+                openGallery(); // If permission is already granted, open the gallery
+            }
+        } else {
+            // For older versions of Android (below 13)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Request the permission if it's not granted
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+            } else {
+                openGallery(); // If permission is already granted, open the gallery
             }
         }
     }
 
-    private void requestStoragePermission() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_MEDIA_IMAGES}, REQUEST_STORAGE_PERMISSION);
-            } else {
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission was granted
                 openGallery();
-            }
-        } else {
-            // Starší Androidy
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
             } else {
-                openGallery();
+                // Permission was denied
+                Toast.makeText(this, "Oprávnění zamítnuto! Bez něj nemohu načíst obrázky.", Toast.LENGTH_SHORT).show();
             }
         }
     }
+
     private String getRealPathFromURI(Context context, Uri uri) {
         String filePath = null;
         if (DocumentsContract.isDocumentUri(context, uri)) {
@@ -125,7 +138,6 @@ public class Register extends AppCompatActivity {
         } else if ("file".equalsIgnoreCase(uri.getScheme())) {
             filePath = uri.getPath();
         }
-
         return filePath;
     }
 
@@ -150,13 +162,25 @@ public class Register extends AppCompatActivity {
 
 
     private void saveImagePathToDatabase(String imagePath) {
+        usernameS = findViewById(R.id.username);
+        passwordS = findViewById(R.id.PASSWORD);
+
+        String username = usernameS.getText().toString();
+        String password = passwordS.getText().toString();
+        // Získání instance databáze a DAO
         AppDatabase db = AppDatabase.getInstance(this);
         UserDao userDao = db.userDao();
 
-        new Thread(() -> {
-            userDao.updateUserProfilePicture("uzivatelskejmeno", imagePath);
-            Log.e("dyk",imagePath);
-        }).start();
+        // Zkontroluj, že cesta k obrázku není null nebo prázdná
+        if (imagePath != null && !imagePath.isEmpty()) {
+            // Ulož cestu do databáze ve vlákně na pozadí
+            new Thread(() -> {
+                // Změňte "uzivatelskejmeno" na skutečné uživatelské jméno
+                userDao.updateUserProfilePicture(username, imagePath);
+            }).start();
+        } else {
+            Log.e("SaveImagePath", "Cesta k obrázku je null nebo prázdná!");
+        }
     }
     public void RegisterUser(View view) {
         usernameS = findViewById(R.id.username);
