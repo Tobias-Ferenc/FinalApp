@@ -35,4 +35,7 @@ public interface WishlistDao {
     void takeItem(int itemId, String username);
     @Query("UPDATE wishlist SET takenBy = NULL WHERE id = :itemId AND takenBy = :username")
     void returnItem(int itemId, String username);
+
+    @Query("UPDATE wishlist SET dueDate = :newDate WHERE id = :itemId")
+    void updateDueDate(int itemId, String newDate);
 }

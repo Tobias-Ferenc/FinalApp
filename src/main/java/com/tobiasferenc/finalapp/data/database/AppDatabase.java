@@ -10,7 +10,7 @@ import com.tobiasferenc.finalapp.data.dao.WishlistDao;
 import com.tobiasferenc.finalapp.data.entities.User;
 import com.tobiasferenc.finalapp.data.entities.WishListItem;
 
-@Database(entities = {User.class, WishListItem.class}, version = 2)
+@Database(entities = {User.class, WishListItem.class}, version = 3)  // Incremented the version number
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;
 
@@ -21,7 +21,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "app_database")
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration()  // Use migration strategy if needed
                     .build();
         }
         return INSTANCE;

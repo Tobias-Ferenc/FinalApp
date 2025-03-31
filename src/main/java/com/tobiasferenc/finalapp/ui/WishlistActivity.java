@@ -1,10 +1,12 @@
 package com.tobiasferenc.finalapp.ui;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +23,8 @@ import com.tobiasferenc.finalapp.data.database.AppDatabase;
 import com.tobiasferenc.finalapp.data.dao.WishlistDao;
 import com.tobiasferenc.finalapp.data.entities.WishListItem;
 
+import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.List;
 
 public class WishlistActivity extends AppCompatActivity {
@@ -41,7 +45,7 @@ public class WishlistActivity extends AppCompatActivity {
 
         wishlistListView.setOnItemClickListener((parent, view, position, id) -> {
             WishListItem item = (WishListItem) parent.getItemAtPosition(position);
-            showOptionsDialog(item); // Přidá volání dialogu při kliknutí na položku
+            showOptionsDialog(item); // Otevření dialogu s možnostmi
         });
 
         wishlistDao = AppDatabase.getInstance(this).wishlistDao();
@@ -57,6 +61,7 @@ public class WishlistActivity extends AppCompatActivity {
             Toast.makeText(this, "Přihlášen jako: " + currentUser, Toast.LENGTH_LONG).show();
         }
 
+
         loadWishlist();
     }
 
@@ -68,8 +73,12 @@ public class WishlistActivity extends AppCompatActivity {
             return;
         }
 
+        // Získání aktuálního data + třeba měsíc jako výchozí platnost
+        LocalDate dueDate = LocalDate.now().plusMonths(1);
+        String formattedDueDate = dueDate.toString(); // Uložení jako String (YYYY-MM-DD)
+
         new Thread(() -> {
-            WishListItem newItem = new WishListItem(itemName, currentUser); // currentUser jako vlastník
+            WishListItem newItem = new WishListItem(itemName, currentUser, formattedDueDate);
             wishlistDao.insertItem(newItem);
 
             runOnUiThread(() -> {
@@ -97,18 +106,25 @@ public class WishlistActivity extends AppCompatActivity {
                         TextView itemName = convertView.findViewById(R.id.itemName);
                         TextView itemOwner = convertView.findViewById(R.id.itemOwner);
                         Button takeButton = convertView.findViewById(R.id.takeButton);
+                        Button editDueDateButton = convertView.findViewById(R.id.editDueDateButton);  // New button to edit due date
 
                         WishListItem item = getItem(position);
                         if (item != null) {
                             itemName.setText(item.getItemName());
                             itemOwner.setText("Přidal: " + item.getOwnerUsername());
 
-                            // Pokud je položka vzatá, zakážeme tlačítko
-                            if (item.takenBy != null) {
-                                takeButton.setEnabled(!item.takenBy.equals(currentUser)); // Zakázat tlačítko, pokud ji vzal někdo jiný než přihlášený
-                                takeButton.setText("VZATO: " + item.takenBy);
+                            // Set due date (or placeholder text if null)
+                            TextView dueDateText = convertView.findViewById(R.id.dueDateText);
+                            if (item.getDueDate() != null) {
+                                dueDateText.setText("Do: " + item.getDueDate());
+                            } else {
+                                dueDateText.setText("Bez termínu");
+                            }
 
-                                // Pokud je přihlášený uživatel majitel, změníme text na 'Vrátit'
+                            // If the item is taken, disable the take button
+                            if (item.takenBy != null) {
+                                takeButton.setEnabled(!item.takenBy.equals(currentUser)); // Disable if already taken
+                                takeButton.setText("VZATO: " + item.takenBy);
                                 if (item.takenBy.equals(currentUser)) {
                                     takeButton.setText("VRÁTIT");
                                 }
@@ -117,7 +133,7 @@ public class WishlistActivity extends AppCompatActivity {
                                 takeButton.setText("VZÍT");
                             }
 
-                            // Kliknutí na tlačítko pro vzít/převzít položku nebo vrácení
+                            // Click listener for the take button
                             takeButton.setOnClickListener(v -> {
                                 if (item.takenBy == null) {
                                     takeItem(item.id); // Uživatel si vezme položku
@@ -125,6 +141,9 @@ public class WishlistActivity extends AppCompatActivity {
                                     returnItem(item.id); // Uživatel vrátí položku
                                 }
                             });
+
+                            // Click listener for the due date edit button
+                            editDueDateButton.setOnClickListener(v -> showDatePicker(item.id));  // Opens the date picker to set the due date
                         }
 
                         return convertView;
@@ -135,6 +154,30 @@ public class WishlistActivity extends AppCompatActivity {
         }).start();
     }
 
+
+    private void showDatePicker(int itemId) {
+        Calendar calendar = Calendar.getInstance();
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, year, month, dayOfMonth) -> {
+                    String selectedDate = year + "-" + (month + 1) + "-" + dayOfMonth;
+                    updateDueDate(itemId, selectedDate);
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+        );
+        datePickerDialog.show();
+    }
+
+    private void updateDueDate(int itemId, String newDate) {
+        new Thread(() -> {
+            wishlistDao.updateDueDate(itemId, newDate);
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Datum změněno!", Toast.LENGTH_SHORT).show();
+                loadWishlist();
+            });
+        }).start();
+    }
     // Tato metoda zajišťuje, že položku si může vzít jen přihlášený uživatel a ne vlastní
     private void takeItem(int itemId) {
         new Thread(() -> {
@@ -169,6 +212,8 @@ public class WishlistActivity extends AppCompatActivity {
     }
 
     private void showOptionsDialog(WishListItem item) {
+        Log.e("WishlistActivity", "showOptionsDialog called");
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Možnosti");
 
