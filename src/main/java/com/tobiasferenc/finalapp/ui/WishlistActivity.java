@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,7 +47,9 @@ public class WishlistActivity extends AppCompatActivity {
 
         wishlistListView.setOnItemClickListener((parent, view, position, id) -> {
             WishListItem item = (WishListItem) parent.getItemAtPosition(position);
-            showOptionsDialog(item); // Otevření dialogu s možnostmi
+            if (item != null) {
+                showOptionsDialog(item);
+            }
         });
 
         wishlistDao = AppDatabase.getInstance(this).wishlistDao();
@@ -106,14 +110,13 @@ public class WishlistActivity extends AppCompatActivity {
                         TextView itemName = convertView.findViewById(R.id.itemName);
                         TextView itemOwner = convertView.findViewById(R.id.itemOwner);
                         Button takeButton = convertView.findViewById(R.id.takeButton);
-                        Button editDueDateButton = convertView.findViewById(R.id.editDueDateButton);  // New button to edit due date
+                        Button editDueDateButton = convertView.findViewById(R.id.editDueDateButton);
 
                         WishListItem item = getItem(position);
                         if (item != null) {
                             itemName.setText(item.getItemName());
                             itemOwner.setText("Přidal: " + item.getOwnerUsername());
 
-                            // Set due date (or placeholder text if null)
                             TextView dueDateText = convertView.findViewById(R.id.dueDateText);
                             if (item.getDueDate() != null) {
                                 dueDateText.setText("Do: " + item.getDueDate());
@@ -121,9 +124,9 @@ public class WishlistActivity extends AppCompatActivity {
                                 dueDateText.setText("Bez termínu");
                             }
 
-                            // If the item is taken, disable the take button
+                            // Pokud je položka vzata, upravíme tlačítko
                             if (item.takenBy != null) {
-                                takeButton.setEnabled(!item.takenBy.equals(currentUser)); // Disable if already taken
+                                takeButton.setEnabled(!item.takenBy.equals(currentUser));
                                 takeButton.setText("VZATO: " + item.takenBy);
                                 if (item.takenBy.equals(currentUser)) {
                                     takeButton.setText("VRÁTIT");
@@ -133,17 +136,23 @@ public class WishlistActivity extends AppCompatActivity {
                                 takeButton.setText("VZÍT");
                             }
 
-                            // Click listener for the take button
+                            // Umožnit změnu data pouze vlastníkovi
+                            if (currentUser.equals(item.getOwnerUsername())) {
+                                editDueDateButton.setVisibility(View.VISIBLE);
+                                editDueDateButton.setOnClickListener(v ->
+                                        showDatePicker(item.id, item.getOwnerUsername(), currentUser)
+                                );
+                            } else {
+                                editDueDateButton.setVisibility(View.GONE);
+                            }
+
                             takeButton.setOnClickListener(v -> {
                                 if (item.takenBy == null) {
-                                    takeItem(item.id); // Uživatel si vezme položku
+                                    takeItem(item.id);
                                 } else if (item.takenBy.equals(currentUser)) {
-                                    returnItem(item.id); // Uživatel vrátí položku
+                                    returnItem(item.id);
                                 }
                             });
-
-                            // Click listener for the due date edit button
-                            editDueDateButton.setOnClickListener(v -> showDatePicker(item.id));  // Opens the date picker to set the due date
                         }
 
                         return convertView;
@@ -154,12 +163,17 @@ public class WishlistActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void showDatePicker(int itemId, String ownerId, String currentUserId) {
+        if (!currentUserId.equals(ownerId)) {
+            Toast.makeText(this, "Pouze vlastník může změnit datum!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-    private void showDatePicker(int itemId) {
         Calendar calendar = Calendar.getInstance();
-        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
                 (view, year, month, dayOfMonth) -> {
-                    String selectedDate = year + "-" + (month + 1) + "-" + dayOfMonth;
+                    String selectedDate = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth);
                     updateDueDate(itemId, selectedDate);
                 },
                 calendar.get(Calendar.YEAR),
@@ -178,6 +192,7 @@ public class WishlistActivity extends AppCompatActivity {
             });
         }).start();
     }
+
     // Tato metoda zajišťuje, že položku si může vzít jen přihlášený uživatel a ne vlastní
     private void takeItem(int itemId) {
         new Thread(() -> {
@@ -212,24 +227,34 @@ public class WishlistActivity extends AppCompatActivity {
     }
 
     private void showOptionsDialog(WishListItem item) {
-        Log.e("WishlistActivity", "showOptionsDialog called");
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Možnosti");
 
-        String[] options = {"Upravit", "Smazat", "Detail"};
-        builder.setItems(options, (dialog, which) -> {
-            if (which == 0) {
-                showEditDialog(item);
-            } else if (which == 1) {
-                deleteWishItem(item.id);
-            } else if (which == 2) {
-                showWishDetail(item.id);
-            }
-        });
+        // Rozdílné možnosti pro vlastníka a pro ostatní uživatele
+        if (currentUser.equals(item.getOwnerUsername())) {
+            String[] options = {"Upravit", "Smazat", "Detail"};
+            builder.setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    showEditDialog(item);
+                } else if (which == 1) {
+                    deleteWishItem(item.id);
+                } else if (which == 2) {
+                    showWishDetail(item.id);
+                }
+            });
+        } else {
+            String[] options = {"Detail"};
+            builder.setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    showWishDetail(item.id);
+                }
+            });
+        }
 
         builder.show();
     }
+
+
 
     private void showEditDialog(WishListItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

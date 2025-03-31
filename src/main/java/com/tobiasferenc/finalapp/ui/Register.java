@@ -32,6 +32,12 @@ import com.tobiasferenc.finalapp.data.dao.UserDao;
 import com.tobiasferenc.finalapp.data.database.AppDatabase;
 import com.tobiasferenc.finalapp.data.entities.User;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 public class Register extends AppCompatActivity {
     EditText usernameS, passwordS;
     ImageView PFPS;
@@ -89,8 +95,8 @@ public class Register extends AppCompatActivity {
             } else {
                 openGallery(); // If permission is already granted, open the gallery
             }
-        } else {
-            // For older versions of Android (below 13)
+        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // For Android 10 (API 29) and above, scoped storage is used, so no need for WRITE_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
                     != PackageManager.PERMISSION_GRANTED) {
                 // Request the permission if it's not granted
@@ -99,8 +105,21 @@ public class Register extends AppCompatActivity {
             } else {
                 openGallery(); // If permission is already granted, open the gallery
             }
+        } else {
+            // For Android 9 and below, you need both read and write permissions
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED) {
+                // Request the permissions if not granted
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+            } else {
+                openGallery(); // If permission is already granted, open the gallery
+            }
         }
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -161,13 +180,34 @@ public class Register extends AppCompatActivity {
         return null;
     }
 
+    private String saveImageToInternalStorage(Uri uri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            File file = new File(getFilesDir(), "profile_" + System.currentTimeMillis() + ".jpg");
+            OutputStream outputStream = new FileOutputStream(file);
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            outputStream.close();
+            inputStream.close();
+
+            return file.getAbsolutePath(); // Tohle uložit do databáze
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     private void saveImagePathToDatabase(String imagePath) {
         usernameS = findViewById(R.id.username);
         passwordS = findViewById(R.id.PASSWORD);
 
-        String username = usernameS.getText().toString();
-        String password = passwordS.getText().toString();
+        //String username = usernameS.getText().toString();
+        //String password = passwordS.getText().toString();
         // Získání instance databáze a DAO
         AppDatabase db = AppDatabase.getInstance(this);
         UserDao userDao = db.userDao();
@@ -176,7 +216,12 @@ public class Register extends AppCompatActivity {
         if (imagePath != null && !imagePath.isEmpty()) {
             // Ulož cestu do databáze ve vlákně na pozadí
             new Thread(() -> {
-                // Změňte "uzivatelskejmeno" na skutečné uživatelské jméno
+                SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                String username = prefs.getString("username", null); // Načte username z přihlášení
+                if (username == null) {
+                    Log.e("SaveImagePath", "Username není uložen v SharedPreferences!");
+                    return;
+                }
                 userDao.updateUserProfilePicture(username, imagePath);
             }).start();
         } else {
@@ -244,14 +289,18 @@ public class Register extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, PICK_IMAGE_REQUEST);
     }
+
     private void loadUserProfile() {
         new Thread(() -> {
-            User user = userDao.getUser("uzivatelskejmeno");  // Změň na aktuální username
-            if (user != null && user.profilePicturePath != null) {
-                runOnUiThread(() -> {
-                    PFPS.setImageURI(Uri.parse(user.profilePicturePath));
-                });
+            SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+            String username = prefs.getString("username", null);
+            if (username != null) {
+                User user = userDao.getUser(username);
+                if (user != null && user.profilePicturePath != null) {
+                    runOnUiThread(() -> PFPS.setImageURI(Uri.parse(user.profilePicturePath)));
+                }
             }
+
         }).start();
     }
 }
